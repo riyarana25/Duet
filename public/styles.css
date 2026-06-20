@@ -1,0 +1,147 @@
+/*
+ * Editorial, calm, document-first. Near-monochrome with one accent (amber). A real serif
+ * for body text; generous whitespace; quiet chrome. See design.md for the rationale.
+ */
+:root {
+  --paper: #faf9f7;
+  --ink: #1f1d1a;
+  --muted: #8a857c;
+  --rule: #e7e3dc;
+  --accent: #b45309;
+  --doc-width: 68ch;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Iowan Old Style, Palatino, Georgia, 'Times New Roman', serif;
+  font-size: 19px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  max-width: var(--doc-width);
+  margin: 0 auto;
+  padding: 48px 24px 30vh;
+}
+
+/* --- quiet chrome --- */
+.chrome {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(var(--paper) 78%, transparent);
+  padding: 10px 0 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.peers {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--muted);
+}
+.peer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.peer-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.ai-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+.ai-btn {
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.ai-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.ai-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.ai-status {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 8ch;
+}
+
+/* --- writing surface --- */
+.surface {
+  position: relative;
+}
+.doc {
+  position: relative;
+  z-index: 1;
+  white-space: pre-wrap;
+  word-break: break-word;
+  outline: none;
+  min-height: 60vh;
+  caret-color: var(--ink);
+}
+.doc:empty::before {
+  content: 'Start writing…';
+  color: var(--muted);
+}
+
+/* --- live remote cursors --- */
+.cursors {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+.remote-caret {
+  position: absolute;
+  width: 2px;
+  border-radius: 1px;
+}
+.remote-label {
+  position: absolute;
+  top: -1.35em;
+  left: -1px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 11px;
+  line-height: 1;
+  color: #fff;
+  padding: 2px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
