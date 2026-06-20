@@ -1,0 +1,7 @@
+node_modules/
+dist/
+public/bundle.js
+public/bundle.js.map
+coverage/
+*.log
+.DS_Store
