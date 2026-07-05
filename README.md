@@ -1,11 +1,11 @@
-# Collaborative Document Editor
+# Collaborative Code Editor
 
-A real-time collaborative editor — many people editing one document at once, seeing
+A real-time collaborative code editor — many people editing one document at once, seeing
 each other's cursors live, never losing an edit — built around a **hand-written sequence
 CRDT** (RGA-style). No Yjs, Automerge, ShareDB, or any off-the-shelf CRDT/OT library: the
 merge algorithm is implemented from scratch and documented in [logic.md](logic.md).
 
-There's also an AI assist panel that can summarize or rewrite a selection, with the result
+There's also an AI assist panel that can explain or refactor a selection, with the result
 inserted back **through the CRDT** as ordinary operations, so it converges on every peer
 just like a keystroke.
 
@@ -22,10 +22,14 @@ just like a keystroke.
 - **Horizontally scalable** — a pub/sub message bus (Redis in production, in-memory for
   tests) fans ops and presence across server instances so users on different processes
   still converge.
-- **AI assist** — select text, then summarize or improve it via the Anthropic API. The key
-  stays server-side; the result re-enters the document as CRDT ops.
-- **Browser editor** — a controlled `contenteditable` surface where the CRDT is the single
-  source of truth, with live remote cursors and an editorial, document-first UI.
+- **AI assist** — select code, then Explain or Refactor it via the Anthropic API (in doc
+  mode: Summarize / Improve). The key stays server-side; the result re-enters the document
+  as CRDT ops.
+- **Browser editor, code-first** — a controlled `contenteditable` surface where the CRDT
+  is the single source of truth: syntax highlighting (highlight.js, auto-detected or
+  picked from 16 languages), line numbers, live remote cursors, a join screen for picking
+  your name/colour/room, and dark + light themes. A **doc mode** toggle renders the same
+  shared text as a serif writing surface for prose.
 
 ## Architecture
 
@@ -60,6 +64,7 @@ For the full picture:
 - **Scale:** Redis pub/sub fan-out between instances
 - **AI:** Anthropic API (`@anthropic-ai/sdk`)
 - **Tests:** Jest + ts-jest, with property-based tests via fast-check
+- **Highlighting:** highlight.js (grammars only — the editor surface around it is custom)
 - **Web build:** esbuild bundle, served alongside the WebSocket server
 
 ## Getting started
@@ -110,7 +115,7 @@ src/
   client/     ClientConnection + pluggable transports (node / browser)
   server/     WebSocket server, per-doc room, stores, message bus
   ai/         AIService interface + Anthropic and mock implementations
-  web/        browser editor (controlled contenteditable)
+  web/        browser editor (controlled contenteditable, code + doc modes)
   util/       environment-neutral emitter + id helpers
 public/       static assets and the built browser bundle
 ```

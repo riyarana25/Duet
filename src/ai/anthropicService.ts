@@ -6,13 +6,18 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { AIAction, AIService } from './aiService';
 
+// Wire actions keep their original names; the editor surfaces them as Explain/Refactor.
 const SYSTEM: Record<AIAction, string> = {
   summarize:
-    'Summarize the user-provided text concisely while preserving its meaning. ' +
-    'Reply with ONLY the summary — no preamble, labels, or quotation marks.',
+    'You annotate code for a collaborative code editor. Reply with a concise explanation ' +
+    'of what the provided code does, formatted as line comments (each line starting with ' +
+    '"// "), followed by the original content verbatim and unchanged. If the input is prose ' +
+    'rather than code, reply with only a concise summary instead. No preamble, no code fences.',
   improve:
-    'Rewrite the user-provided text to improve clarity, flow, and concision without ' +
-    'changing its meaning. Reply with ONLY the rewritten text — no preamble or commentary.',
+    'You refactor code for a collaborative code editor. Rewrite the provided code to improve ' +
+    'clarity, naming, and structure WITHOUT changing its behavior. If the input is prose ' +
+    'rather than code, improve its clarity and concision instead. Reply with ONLY the ' +
+    'rewritten content — no preamble, no commentary, no code fences.',
 };
 
 export class AnthropicAIService implements AIService {

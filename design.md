@@ -1,22 +1,64 @@
 # design.md — Frontend design decisions
 
-> Living document. The UI does not exist until Phase 2; this records the *direction* and
-> will gain concrete justifications (with rationale) as components are built. The brief:
-> a **writing surface**, editorial and calm — not a generic SaaS dashboard.
+> Living document. The brief evolved: the first build was an editorial *writing* surface
+> (serif, paper, prose); it has since pivoted to a **collaborative code editor** — the
+> CRDT story lands harder as "Google Docs for code." The principles carried over; the
+> surface changed. Superseded decisions are kept below for the record.
 
-## Direction (committed)
+## Direction (current)
 
-- **Tone:** editorial, calm, document-first. The text is the interface; chrome stays quiet.
-- **Typography:** a real serif (or a refined, non-default sans) for body text. Explicitly
-  **not** Inter-on-purple-gradient. Body text optimized for reading long passages.
-- **Palette:** restrained near-monochrome + **one** accent color. No hero gradients.
-- **Layout:** generous whitespace, single focused column. No rounded-2xl card soup.
-- **Live cursors:** each remote user gets a distinct, stable color + a name label.
+- **Tone:** quiet, terminal-adjacent, code-first. The code is the interface; chrome stays
+  minimal (one header row, one status bar). Not a generic SaaS dashboard, not a stock
+  slate-gray IDE clone.
+- **Typography:** system monospace stack everywhere — including the chrome — for a coherent
+  editor identity. No web-font load, no layout shift.
+- **Palette:** dark-first, warm near-monochrome + **one** amber accent. The warm undertone
+  is inherited from the original paper design and is what keeps it from looking like every
+  default dark theme. A light theme mirrors the same values; a toggle persists the choice.
+- **Live cursors:** each remote user gets a distinct, stable color + a name label,
+  chosen by the user at join.
 
-## AI assist panel (Phase 5) — interaction & placement rationale
+## Decisions made (current build — [public/styles.css](public/styles.css), [src/web/](src/web/))
 
-The current build is headless (no DOM yet), but the AI feature's *interaction model* is
-already fixed by the implementation, and the visual treatment follows from it:
+- **Join screen, not auto-drop-in.** Name, cursor colour (7 swatches), and room are chosen
+  before connecting; name/colour persist in localStorage, the room lands in the URL so a
+  session is shareable by link. Rationale: presence is the product — an identity you picked
+  makes the live-cursor demo legible ("that's really Alan"), where a random default name
+  undermined it.
+- **Highlight underlay, not a rich-text DOM.** The contenteditable keeps ONE plain text
+  node with `color: transparent` (it owns caret, selection, and input); a `.highlight`
+  layer behind it paints the same text with token colours. Rationale: all the
+  caret/selection math assumes a single text node; this adds syntax colour without
+  touching any of it. Alignment is guaranteed by shared font metrics.
+- **Tokenizing is outsourced; the architecture is not.** Highlighting uses highlight.js
+  (16 grammars registered individually, auto-detect debounced + cached, plus a manual
+  language picker). A first hand-rolled tokenizer was replaced deliberately: language
+  grammars are commodity work, and the no-library rule exists to prove out the CRDT, not
+  to hand-write the world. The token *palette* stays ours — no hljs theme import; colours
+  map onto the same warm variables as everything else.
+- **Two view modes over one shared text.** `code` (mono, gutter, highlight, no wrap) and
+  `doc` (serif, wrapped, focused column — the original editorial design lives on here).
+  Mode is a per-client rendering choice: peers can view the same document differently and
+  still converge, because the CRDT text is the source of truth either way. The status bar
+  and AI verbs follow the mode (Ln/Col + Explain/Refactor vs word count + Summarize/Improve).
+- **No line wrap ⇒ trivial gutter.** `white-space: pre` + horizontal scroll means visual
+  lines equal logical lines, so the line-number gutter is just "1..N at the shared
+  line-height" — no per-line measurement, always aligned.
+- **Code-editor table stakes:** Tab inserts two spaces; Enter copies the current line's
+  leading whitespace (auto-indent); Ln/Col + peers + sync state in a fixed status bar.
+- **AI verbs reframed:** the panel reads **Explain / Refactor** (code-flavoured), mapped to
+  the existing wire actions (`summarize`/`improve`) so protocol, server, and tests are
+  untouched. Explain prepends `//` comments and keeps the code; Refactor rewrites in place.
+  Results still re-enter as CRDT ops.
+
+## Superseded (first build — editorial writing surface)
+
+Kept for the record; the reasoning still informs the current look.
+
+### AI assist panel — original interaction & placement rationale
+
+The AI feature's *interaction model* was fixed before the DOM existed, and the visual
+treatment followed from it (the interaction model survives the pivot unchanged):
 
 - **Selection-driven, not a chatbox.** The panel acts on the current selection
   (`transformSelection(action, start, end)`); there is no free-form prompt. This keeps the
@@ -29,7 +71,7 @@ already fixed by the implementation, and the visual treatment follows from it:
   the selection, in the restrained palette with the single accent reserved for the action
   buttons. No modal, no full-height sidebar — the AI must never push the writing column around.
 
-## Decisions made (built — [public/styles.css](public/styles.css), [src/web/editor.ts](src/web/editor.ts))
+### Decisions of the editorial build (replaced by the code-editor look above)
 
 - **Typeface:** body is a system *serif* stack (Iowan Old Style → Palatino → Georgia → serif)
   at 19px / 1.7 line-height. Rationale: a serif signals "writing surface," reads well for long

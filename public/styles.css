@@ -1,14 +1,40 @@
 /*
- * Editorial, calm, document-first. Near-monochrome with one accent (amber). A real serif
- * for body text; generous whitespace; quiet chrome. See design.md for the rationale.
+ * Code-editor surface: dark-first, warm near-monochrome with one amber accent.
+ * The warm undertone (paper heritage from the original editorial design) is deliberate —
+ * it keeps the editor from looking like every stock slate-gray theme. See design.md.
+ *
+ * Layout contract: .doc, .highlight and .gutter MUST share font, size, line-height and
+ * padding-top — the highlight underlay and the line numbers align to the text purely by
+ * shared metrics (lines never wrap; long lines scroll horizontally).
  */
-:root {
-  --paper: #faf9f7;
-  --ink: #1f1d1a;
-  --muted: #8a857c;
-  --rule: #e7e3dc;
+:root,
+:root[data-theme='dark'] {
+  --bg: #131211;
+  --bg-raised: #1b1917;
+  --ink: #d9d4ca;
+  --muted: #7d7668;
+  --rule: #2a2722;
+  --accent: #d97706;
+  --selection: rgba(217, 119, 6, 0.22);
+  --tok-k: #cf9161;
+  --tok-s: #97b380;
+  --tok-n: #7fb4ca;
+  --tok-c: #6d675c;
+  --tok-f: #d9b96c;
+}
+:root[data-theme='light'] {
+  --bg: #f7f6f3;
+  --bg-raised: #fdfcf9;
+  --ink: #26221c;
+  --muted: #8a8478;
+  --rule: #e4e0d6;
   --accent: #b45309;
-  --doc-width: 68ch;
+  --selection: rgba(180, 83, 9, 0.18);
+  --tok-k: #a5541a;
+  --tok-s: #48762e;
+  --tok-n: #14708c;
+  --tok-c: #999181;
+  --tok-f: #8f6b13;
 }
 
 * {
@@ -22,41 +48,141 @@ body {
 }
 
 body {
-  background: var(--paper);
+  background: var(--bg);
   color: var(--ink);
-  font-family: Iowan Old Style, Palatino, Georgia, 'Times New Roman', serif;
-  font-size: 19px;
-  line-height: 1.7;
+  font-family: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 14px;
+  line-height: 1.65;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 #app {
-  max-width: var(--doc-width);
-  margin: 0 auto;
-  padding: 48px 24px 30vh;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-/* --- quiet chrome --- */
+/* ---------- join screen ---------- */
+.join-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.join-card {
+  width: 340px;
+  background: var(--bg-raised);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 28px 28px 24px;
+}
+.join-title {
+  font-size: 16px;
+  letter-spacing: 0.02em;
+}
+.join-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 6px 0 22px;
+  line-height: 1.5;
+}
+.join-field {
+  margin-bottom: 16px;
+}
+.join-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.join-input {
+  width: 100%;
+  font: inherit;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 8px 10px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.join-input:focus {
+  border-color: var(--accent);
+}
+.swatches {
+  display: flex;
+  gap: 10px;
+  margin: 4px 0 22px;
+}
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color 0.15s;
+}
+.swatch.selected {
+  outline-color: var(--ink);
+}
+.join-btn {
+  width: 100%;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--bg);
+  background: var(--ink);
+  border: none;
+  border-radius: 6px;
+  padding: 9px 0;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.join-btn:hover {
+  opacity: 0.85;
+}
+
+/* ---------- chrome (header) ---------- */
 .chrome {
   position: sticky;
   top: 0;
-  background: linear-gradient(var(--paper) 78%, transparent);
-  padding: 10px 0 14px;
+  z-index: 10;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 18px;
+  gap: 12px 18px;
+  padding: 9px 18px;
+  background: var(--bg);
   border-bottom: 1px solid var(--rule);
+  font-size: 12px;
+}
+.room {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  white-space: nowrap;
+}
+.room-label {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.room-name {
+  color: var(--ink);
 }
 
 .peers {
   display: flex;
-  gap: 14px;
+  gap: 12px;
   flex-wrap: wrap;
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: 13px;
+  flex: 1;
   color: var(--muted);
 }
 .peer {
@@ -65,8 +191,8 @@ body {
   gap: 6px;
 }
 .peer-dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   display: inline-block;
 }
@@ -75,16 +201,15 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: ui-sans-serif, system-ui, sans-serif;
 }
 .ai-btn {
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--ink);
   background: transparent;
   border: 1px solid var(--rule);
   border-radius: 6px;
-  padding: 5px 12px;
+  padding: 4px 11px;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
@@ -97,31 +222,144 @@ body {
   cursor: default;
 }
 .ai-status {
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
   min-width: 8ch;
 }
 
-/* --- writing surface --- */
-.surface {
+.mode-seg {
+  display: flex;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.mode-btn {
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  padding: 5px 11px;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+}
+.mode-btn:hover {
+  color: var(--ink);
+}
+.mode-btn.active {
+  color: var(--ink);
+  background: var(--bg-raised);
+}
+
+.lang-select {
+  font: inherit;
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 4px 6px;
+  outline: none;
+  cursor: pointer;
+}
+.lang-select:hover {
+  border-color: var(--accent);
+}
+
+.theme-btn {
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  width: 28px;
+  height: 26px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.theme-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ---------- editor surface ---------- */
+.editor-shell {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  padding-bottom: 34px; /* room for the fixed statusbar */
+}
+
+.gutter {
+  flex: none;
+  min-width: 44px;
+  padding: 20px 12px 0 0;
+  text-align: right;
+  color: var(--muted);
+  white-space: pre;
+  user-select: none;
+  border-right: 1px solid var(--rule);
+  opacity: 0.75;
+}
+
+.code-scroll {
+  flex: 1;
+  overflow-x: auto;
+}
+.code-stack {
   position: relative;
+  width: max-content;
+  min-width: 100%;
+  min-height: 100%;
+}
+
+/* .doc owns caret + input with transparent text; .highlight paints the same text
+   behind it. Identical padding/metrics keep them glyph-aligned. */
+.doc,
+.highlight {
+  padding: 20px 24px 45vh 16px;
+  white-space: pre;
+  word-break: normal;
 }
 .doc {
   position: relative;
   z-index: 1;
-  white-space: pre-wrap;
-  word-break: break-word;
+  min-height: 70vh;
   outline: none;
-  min-height: 60vh;
+  color: transparent;
   caret-color: var(--ink);
 }
+.doc::selection,
+.doc *::selection {
+  background: var(--selection);
+  color: transparent;
+}
 .doc:empty::before {
-  content: 'Start writing…';
+  content: '// start typing — or paste some code';
   color: var(--muted);
 }
+.highlight {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  color: var(--ink);
+}
 
-/* --- live remote cursors --- */
+/* token colours — our own restrained mapping over highlight.js classes (no hljs theme
+   import; the palette stays the project's warm near-monochrome + amber) */
+.hljs-keyword, .hljs-literal, .hljs-built_in, .hljs-type, .hljs-selector-tag { color: var(--tok-k); }
+.hljs-string, .hljs-regexp, .hljs-addition { color: var(--tok-s); }
+.hljs-number, .hljs-symbol { color: var(--tok-n); }
+.hljs-comment, .hljs-quote, .hljs-deletion { color: var(--tok-c); font-style: italic; }
+.hljs-title, .hljs-section, .hljs-name { color: var(--tok-f); }
+.hljs-attr, .hljs-attribute, .hljs-property, .hljs-variable, .hljs-params { color: var(--ink); }
+.hljs-meta, .hljs-doctag, .hljs-tag, .hljs-bullet, .hljs-punctuation { color: var(--muted); }
+
+/* ---------- live remote cursors ---------- */
 .cursors {
   position: absolute;
   inset: 0;
@@ -137,11 +375,56 @@ body {
   position: absolute;
   top: -1.35em;
   left: -1px;
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1;
   color: #fff;
   padding: 2px 5px;
   border-radius: 4px;
   white-space: nowrap;
+}
+
+/* ---------- doc mode: same shared text, rendered as a writing surface ----------
+   (the original editorial design lives on here: serif, wrapped, focused column) */
+.mode-doc .gutter {
+  display: none;
+}
+.mode-doc .highlight {
+  display: none;
+}
+.mode-doc .code-stack {
+  width: 100%;
+}
+.mode-doc .doc {
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'Iowan Old Style', Palatino, Georgia, 'Times New Roman', serif;
+  font-size: 17px;
+  line-height: 1.75;
+  max-width: 72ch;
+  margin: 0 auto;
+  padding: 28px 24px 45vh;
+}
+.mode-doc .doc::selection,
+.mode-doc .doc *::selection {
+  color: var(--ink);
+}
+.mode-doc .doc:empty::before {
+  content: 'Start writing…';
+}
+
+/* ---------- statusbar ---------- */
+.statusbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 18px;
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--bg);
+  border-top: 1px solid var(--rule);
 }

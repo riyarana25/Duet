@@ -2,10 +2,10 @@
   "name": "collab-editor",
   "version": "0.1.0",
   "private": true,
-  "description": "Collaborative document editor with a hand-written RGA CRDT",
+  "description": "Collaborative code editor with a hand-written RGA CRDT",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "build:web": "esbuild src/web/main.ts --bundle --format=iife --target=es2020 --outfile=public/bundle.js",
+    "build:web": "esbuild src/web/main.ts --bundle --minify --format=iife --target=es2020 --outfile=public/bundle.js",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.web.json --noEmit",
     "start:server": "node dist/server/main.js",
     "dev": "npm run build && npm run build:web && npm run start:server",
@@ -25,6 +25,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.105.0",
     "dotenv": "^17.4.2",
+    "highlight.js": "^11.11.1",
     "redis": "^4.7.1",
     "ws": "^8.21.0"
   }
