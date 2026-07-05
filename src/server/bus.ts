@@ -11,14 +11,16 @@
  */
 import { randomUUID } from 'crypto';
 import { Operation } from '../crdt/types';
-import { PresenceState } from '../net/protocol';
+import { ChatBroadcast, PresenceState } from '../net/protocol';
 
 export type BusEnvelope =
   | { kind: 'ops'; origin: string; ops: Operation[] }
   /** The origin instance's local presence snapshot (full, not a delta). */
   | { kind: 'presence'; origin: string; users: PresenceState[] }
   /** Ask peers to (re)publish their local presence — sent when a client joins. */
-  | { kind: 'presence-request'; origin: string };
+  | { kind: 'presence-request'; origin: string }
+  /** A chat message already stamped by its origin instance; relay verbatim. */
+  | { kind: 'chat'; origin: string; msg: ChatBroadcast };
 
 export type BusHandler = (env: BusEnvelope) => void;
 

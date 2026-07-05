@@ -37,6 +37,12 @@ const http = createServer(async (req, res) => {
     res.writeHead(200, {
       "content-type":
         CONTENT_TYPES[path.extname(file)] ?? "application/octet-stream",
+      // Hardening headers. (A strict CSP is intentionally absent: the Python runner
+      // loads Pyodide/WASM from the jsdelivr CDN inside a blob worker, which strict
+      // script-src rules would break. Revisit if the runtime is ever self-hosted.)
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY",
+      "referrer-policy": "no-referrer",
     });
     res.end(body);
   } catch {

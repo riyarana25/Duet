@@ -44,7 +44,19 @@ export type ClientMessage =
   | { t: 'cursor'; cursor: CursorPos | null }
   // AI assist (Phase 5): request a transform of the selected text. The RESULT is applied
   // client-side as CRDT ops — the server only runs the LLM, it never mutates the doc.
-  | { t: 'ai'; requestId: string; action: AIAction; text: string };
+  | { t: 'ai'; requestId: string; action: AIAction; text: string }
+  // Room chat: ephemeral (not persisted); the server stamps sender identity + time.
+  | { t: 'chat'; text: string };
+
+/** One chat message as broadcast to a room (identity stamped server-side). */
+export interface ChatBroadcast {
+  t: 'chat';
+  from: string;
+  name: string;
+  color: string;
+  text: string;
+  ts: number;
+}
 
 export type ServerMessage =
   // Catch-up = persisted snapshot (or null) + ops since that snapshot. Phase 3.
@@ -52,7 +64,8 @@ export type ServerMessage =
   | { t: 'ops'; ops: Operation[]; from: string }
   | { t: 'presence'; users: PresenceState[] }
   | { t: 'ai-result'; requestId: string; ok: true; text: string }
-  | { t: 'ai-result'; requestId: string; ok: false; error: string };
+  | { t: 'ai-result'; requestId: string; ok: false; error: string }
+  | ChatBroadcast;
 
 /** Stable dedup signature for an op (type + id). logic.md §7 — ops are idempotent. */
 export function opSignature(op: Operation): string {

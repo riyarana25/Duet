@@ -7,7 +7,9 @@
  *    out-of-order or duplicate delivery is harmless — logic.md §7).
  *  - Tracks the caret as a CRDT element id so it survives concurrent edits.
  *
- * Events: 'open', 'sync' (welcome received), 'change' (text changed), 'presence', 'close'.
+ * Events: 'open', 'sync' (welcome received), 'change' (text changed), 'presence',
+ * 'activity' (a peer authored ops; arg = their clientId), 'chat' (arg = ChatBroadcast),
+ * 'close'.
  */
 import { Emitter } from '../util/emitter';
 import { newId } from '../util/id';
@@ -171,6 +173,13 @@ export class ClientConnection extends Emitter {
     this.flush();
   }
 
+  /** Send a chat message to the room (server stamps identity + time, then echoes). */
+  sendChat(text: string): void {
+    const t = text.trim();
+    if (t.length === 0 || !this.opened || !this.transport.isOpen()) return;
+    this.send({ t: 'chat', text: t });
+  }
+
   /** Send an AI request and resolve when its 'ai-result' arrives. */
   requestAI(action: AIAction, text: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
@@ -221,11 +230,16 @@ export class ClientConnection extends Emitter {
       case 'ops': {
         for (const op of msg.ops) this.doc.apply(op);
         this.emit('change');
+        this.emit('activity', msg.from); // who's actively editing (typing indicators)
         break;
       }
       case 'presence': {
         this.presence = new Map(msg.users.map((p) => [p.clientId, p]));
         this.emit('presence');
+        break;
+      }
+      case 'chat': {
+        this.emit('chat', msg);
         break;
       }
       case 'ai-result': {

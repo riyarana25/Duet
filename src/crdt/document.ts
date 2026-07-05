@@ -124,6 +124,11 @@ export class RGADocument implements CRDTDocument {
     return this.visible().map((el) => ({ id: el.id, value: el.value }));
   }
 
+  /** Total elements ever applied, tombstones included (size/abuse caps, metrics). */
+  elementCount(): number {
+    return this.elements.size;
+  }
+
   // ---- persistence ----
 
   /** Serialize full state (all elements + tombstones) for snapshotting. logic.md §4. */

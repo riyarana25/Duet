@@ -66,6 +66,16 @@
   CRDT. True attributed rich text (formatting ranges that survive concurrent edits) is a
   known hard problem — Peritext-style mark CRDTs — and is explicitly future work, not
   something to fake with HTML in a character sequence.
+- **Presence v2: selections, follow, typing.** Remote *selections* render as translucent
+  colour rects — the protocol carried `anchor`/`focus` element ids from Phase 2, so this
+  is pure client rendering, no wire change. Typing indicators derive from op broadcasts
+  (`from` was already on every ops frame) rather than a new signal. Follow mode is a
+  chip click: the followed caret is kept scrolled into view and any local edit ends the
+  follow. Pattern: presence features should fall out of data already flowing.
+- **Chat is ephemeral and server-stamped.** Messages are relayed, never persisted (the
+  document is the artifact; chat is coordination). The server stamps sender identity and
+  time, so a client cannot speak as someone else. Rendered via textContent — no HTML
+  injection surface — and rate-limited like ops and AI.
 - **Two view modes over one shared text.** `code` (mono, gutter, highlight, no wrap) and
   `doc` (serif, wrapped, focused column — the original editorial design lives on here).
   Mode is a per-client rendering choice: peers can view the same document differently and

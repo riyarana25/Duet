@@ -1,0 +1,14 @@
+# Render blueprint: creates the web service from the Dockerfile.
+# WebSockets work out of the box; Render terminates TLS and forwards x-forwarded-for
+# (which the per-IP connection cap reads).
+services:
+  - type: web
+    name: collab-editor
+    runtime: docker
+    plan: free
+    healthCheckPath: /
+    envVars:
+      # Set in the Render dashboard (never committed). Optional — without it the AI
+      # panel reports "not configured" and everything else works.
+      - key: ANTHROPIC_API_KEY
+        sync: false

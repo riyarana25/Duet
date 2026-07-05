@@ -16,6 +16,7 @@ import { Room } from './room';
 import { DocStore, InMemoryStore } from './store';
 import { BusEnvelope, MessageBus } from './bus';
 import { AIAction, AIService } from '../ai/aiService';
+import { LIMITS, SlidingWindow, isValidClientMessage, sanitizeUser } from './guard';
 
 export interface ServerOptions {
   store?: DocStore;
@@ -47,6 +48,8 @@ class EditorServer {
   private readonly subscribed = new Set<string>();
   /** docId -> (origin instanceId -> that instance's local presence). */
   private readonly remotePresence = new Map<string, Map<string, PresenceState[]>>();
+  /** Live socket count per client IP (per-IP connection cap). */
+  private readonly ipConns = new Map<string, number>();
   private readonly instanceId: string;
 
   constructor(
@@ -134,16 +137,40 @@ class EditorServer {
         await this.publishLocalPresence(docId);
         break;
       }
+      case 'chat': {
+        room.broadcast(env.msg);
+        break;
+      }
     }
   }
 
   // ---- connection ----
 
   attach(socket: LiveSocket, req: IncomingMessage): void {
-    const docId =
-      new URL(req.url ?? '/', 'http://localhost').searchParams.get('doc') ?? 'default';
+    const docId = (
+      new URL(req.url ?? '/', 'http://localhost').searchParams.get('doc') ?? 'default'
+    ).slice(0, LIMITS.maxDocIdLen);
     const clientId = randomUUID();
     let roomPromise: Promise<Room> | null = null;
+
+    // Per-IP connection cap. Behind a proxy/load balancer the client IP arrives in
+    // x-forwarded-for (first hop); direct connections use the socket address.
+    const fwd = req.headers['x-forwarded-for'];
+    const ip =
+      (typeof fwd === 'string' ? fwd.split(',')[0]?.trim() : undefined) ||
+      req.socket.remoteAddress ||
+      'unknown';
+    const ipCount = this.ipConns.get(ip) ?? 0;
+    if (ipCount >= LIMITS.maxConnsPerIp) {
+      socket.close(4001, 'too many connections');
+      return;
+    }
+    this.ipConns.set(ip, ipCount + 1);
+
+    // Per-connection budgets (see guard.ts for the reasoning behind the numbers).
+    const opWindow = new SlidingWindow(LIMITS.maxOpsPer10s, 10_000);
+    const aiWindow = new SlidingWindow(LIMITS.maxAiPerMinute, 60_000);
+    const chatWindow = new SlidingWindow(LIMITS.maxChatPer10s, 10_000);
 
     socket.isAlive = true;
     socket.on('pong', () => {
@@ -156,9 +183,25 @@ class EditorServer {
     const handle = async (msg: ClientMessage): Promise<void> => {
       switch (msg.t) {
         case 'join': {
+          const user = sanitizeUser(msg.user);
+          if (!user) {
+            socket.close(4003, 'invalid identity');
+            return;
+          }
+          // Room caps: don't let one instance materialize unbounded rooms, or one room
+          // hold unbounded sockets.
+          if (!this.rooms.has(docId) && this.rooms.size >= LIMITS.maxRooms) {
+            socket.close(4005, 'server full');
+            return;
+          }
           roomPromise = this.getRoom(docId);
           const room = await roomPromise;
-          room.join(clientId, socket, msg.user);
+          if (room.size >= LIMITS.maxClientsPerRoom) {
+            roomPromise = null;
+            socket.close(4004, 'room full');
+            return;
+          }
+          room.join(clientId, socket, user);
           const state = room.welcomeState();
           room.sendTo(clientId, {
             t: 'welcome',
@@ -176,7 +219,14 @@ class EditorServer {
         }
         case 'ops': {
           if (!roomPromise) return;
+          if (!opWindow.allow(msg.ops.length)) {
+            socket.close(4008, 'rate limit exceeded');
+            return;
+          }
           const room = await roomPromise;
+          // Document size cap: past it, ops are dropped (the doc is full; a client that
+          // legitimately hits this has pasted a small book).
+          if (room.elementCount() + msg.ops.length > LIMITS.maxDocElements) return;
           const fresh = room.acceptLocal(msg.ops);
           if (fresh.length > 0) {
             room.broadcast({ t: 'ops', ops: fresh, from: clientId }, clientId);
@@ -192,19 +242,51 @@ class EditorServer {
           await this.publishLocalPresence(docId);
           break;
         }
+        case 'chat': {
+          if (!roomPromise) return;
+          if (!chatWindow.allow()) return; // silently drop the flood
+          const room = await roomPromise;
+          const u = room.userOf(clientId);
+          if (!u) return;
+          // Identity and timestamp are stamped HERE — a client can't spoof either.
+          const m: ServerMessage = {
+            t: 'chat',
+            from: clientId,
+            name: u.name,
+            color: u.color,
+            text: msg.text.slice(0, LIMITS.maxChatLen),
+            ts: Date.now(),
+          };
+          room.broadcast(m); // includes the sender: one consistent echo path
+          if (this.bus) await this.bus.publish(docId, { kind: 'chat', origin: this.instanceId, msg: m });
+          break;
+        }
       }
     };
 
     socket.on('message', (data) => {
-      let msg: ClientMessage;
+      let msg: unknown;
       try {
-        msg = JSON.parse(data.toString()) as ClientMessage;
+        msg = JSON.parse(data.toString());
       } catch {
         return;
       }
+      // Strict shape validation before any handler sees the frame (guard.ts): malformed
+      // ops, oversized fields, and unknown types are dropped here.
+      if (!isValidClientMessage(msg)) return;
       // AI runs off the ordered chain: LLM latency must not block this client's edits, and
       // the result is applied by element id, so it needs no ordering against ops.
       if (msg.t === 'ai') {
+        if (!aiWindow.allow()) {
+          const m: ServerMessage = {
+            t: 'ai-result',
+            requestId: msg.requestId,
+            ok: false,
+            error: 'rate limit: try again in a minute',
+          };
+          socket.send(JSON.stringify(m));
+          return;
+        }
         void this.handleAI(socket, msg);
         return;
       }
@@ -212,6 +294,9 @@ class EditorServer {
     });
 
     socket.on('close', () => {
+      const n = (this.ipConns.get(ip) ?? 1) - 1;
+      if (n <= 0) this.ipConns.delete(ip);
+      else this.ipConns.set(ip, n);
       chain = chain.then(async () => {
         if (!roomPromise) return;
         const room = await roomPromise;
@@ -262,8 +347,8 @@ export function startServer(port = 0, opts: ServerOptions = {}): Promise<ServerH
   // Attach to a caller-provided HTTP server (so static files + WS share one port), or bind
   // our own port. When attaching, the caller is expected to have called listen() already.
   const wss = opts.server
-    ? new WebSocketServer({ server: opts.server })
-    : new WebSocketServer({ port });
+    ? new WebSocketServer({ server: opts.server, maxPayload: LIMITS.maxPayloadBytes })
+    : new WebSocketServer({ port, maxPayload: LIMITS.maxPayloadBytes });
   const server = new EditorServer(store, snapshotEveryOps, opts.bus, opts.ai);
 
   wss.on('connection', (socket: LiveSocket, req) => server.attach(socket, req));

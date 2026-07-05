@@ -75,6 +75,10 @@ export class Room {
   get size(): number {
     return this.clients.size;
   }
+  /** Total CRDT elements (tombstones included) — used for the document size cap. */
+  elementCount(): number {
+    return this.replica.elementCount();
+  }
   isEmpty(): boolean {
     return this.clients.size === 0;
   }
@@ -90,6 +94,10 @@ export class Room {
   setCursor(clientId: string, cursor: CursorPos | null): void {
     const c = this.clients.get(clientId);
     if (c) c.cursor = cursor;
+  }
+  /** Identity of a connected participant (used to stamp chat messages). */
+  userOf(clientId: string): PresenceUser | undefined {
+    return this.clients.get(clientId)?.user;
   }
   presenceList(): PresenceState[] {
     return [...this.clients.values()].map((c) => ({

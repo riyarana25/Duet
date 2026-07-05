@@ -15,8 +15,12 @@ just like a keystroke.
   immortal id, inserts reference the character they follow, and deletes are tombstones.
   Operations are commutative and idempotent, so replicas converge regardless of arrival
   order or duplicates. No last-write-wins anywhere in the edit path.
-- **Live presence** — see who's in the document and where their cursor is, anchored to
-  CRDT ids so a remote caret stays glued to the right character as text shifts.
+- **Live presence** — see who's in the document, their cursor, and their **selection**
+  (translucent colour highlight), all anchored to CRDT ids so they stay glued to the
+  right characters as text shifts. Peer chips pulse while someone is typing, and
+  clicking a chip **follows** their cursor around the document.
+- **Room chat** — an ephemeral per-room chat panel (unread badge, identity stamped
+  server-side, rate-limited, relayed across instances via the message bus).
 - **Durable & resumable** — periodic snapshots plus an append-only op log; rejoin or a
   full server restart replays snapshot + recent ops back to a consistent state.
 - **Horizontally scalable** — a pub/sub message bus (Redis in production, in-memory for
@@ -38,6 +42,16 @@ just like a keystroke.
 - **Autocomplete & editing niceties** — word-based completion (language keywords +
   identifiers already in the doc, arrows/Enter/Tab/Esc), Tab indent, Enter auto-indent,
   Ctrl+Backspace / Ctrl+Delete word deletion.
+- **Doc mode is a Markdown surface** — H1/H2/bold/italic/code/list toolbar (and
+  Ctrl+B / Ctrl+I) writing markdown into the shared text, plus a live **preview** toggle
+  rendering styled headings/emphasis (safe hand-rolled renderer, escape-first). Because
+  formatting lives in the text, it collaborates exactly like code.
+- **Share & join** — the room lives in the URL: hit **share** to copy the link, send it,
+  and whoever opens it lands in the same document. The join screen can mint a random
+  room for a fresh private space.
+- **Abuse guards for public deployment** — per-IP connection caps, per-connection op and
+  AI rate limits, strict frame/op validation, document size caps, payload limits (see
+  Security below).
 
 ## Architecture
 
@@ -113,6 +127,43 @@ assert every replica converges to identical state, plus integration tests for th
 server, persistence across restart, cross-instance fan-out, and the AI path. A couple of
 tests are gated on external services (`REDIS_URL`, `ANTHROPIC_API_KEY`) and skip when those
 aren't set.
+
+## Deploying
+
+The app is a single Node process serving HTTP + WebSocket on one port, so any host with
+WebSocket support works (Render, Railway, Fly.io — not static hosts). A
+[Dockerfile](Dockerfile) and a [render.yaml](render.yaml) blueprint are included:
+
+1. Push the repo to GitHub.
+2. On [Render](https://render.com): **New → Blueprint**, point it at the repo — it picks
+   up `render.yaml` and builds the Dockerfile (free plan works; it sleeps when idle and
+   cold-starts in ~30s).
+3. Optionally set `ANTHROPIC_API_KEY` in the service's environment to enable AI assist.
+
+Share the resulting URL with `?doc=room-name` and collaborate.
+
+## Security posture
+
+App-level protections (see [src/server/guard.ts](src/server/guard.ts)):
+
+- **Strict frame validation** — every inbound message is shape-checked before any handler
+  runs; malformed ops are dropped. Inserts must carry exactly one character, so oversized
+  payloads can't be smuggled past the op rate limit.
+- **Rate limits** — per-connection sliding windows on CRDT ops (20k/10s — generous for
+  humans, tight for scripts) and AI requests (6/min, plus a selection-length cap, since
+  each call costs real money).
+- **Connection caps** — per-IP socket limit (reads `x-forwarded-for` behind a proxy),
+  per-room participant limit, and a cap on rooms per instance.
+- **Size caps** — WebSocket frames limited via `maxPayload`; documents refuse ops past an
+  element ceiling; presence names/ids are length-clamped and control-chars stripped.
+- **Key hygiene** — the Anthropic key never reaches the browser; AI runs server-side.
+- **Headers** — `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` on all
+  static responses.
+
+Honest boundary: **volumetric DDoS** (packet/connection floods) cannot be solved in
+application code — that layer belongs to the platform's edge or a CDN (e.g. put
+Cloudflare in front of the deployment). The measures above handle *application-level*
+abuse: op floods, AI cost abuse, memory exhaustion, and malformed input.
 
 ## Project structure
 

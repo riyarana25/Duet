@@ -29,7 +29,7 @@ import { ClientConnection } from '../client/connection';
 import { browserWsTransport } from '../client/transport.browser';
 import { ElementId } from '../crdt/types';
 import { AIAction } from '../ai/aiService';
-import { CursorPos, PresenceUser } from '../net/protocol';
+import { ChatBroadcast, CursorPos, PresenceUser } from '../net/protocol';
 import { highlightAs, detectLanguage, LANGUAGE_OPTIONS } from './highlight';
 import { checkSyntax, Diagnostic } from './diagnostics';
 import { completions } from './complete';
@@ -107,6 +107,11 @@ export function mountEditor(opts: EditorOptions): ClientConnection {
   shareBtn.textContent = 'share';
   shareBtn.title = 'Copy the room link';
 
+  const chatBtn = el('button', 'share-btn');
+  chatBtn.type = 'button';
+  chatBtn.textContent = 'chat';
+  chatBtn.title = 'Room chat';
+
   const aiBar = el('div', 'ai-bar');
   const aiPrimary = button('Explain');
   const aiSecondary = button('Refactor');
@@ -118,7 +123,7 @@ export function mountEditor(opts: EditorOptions): ClientConnection {
   themeBtn.title = 'Toggle theme';
 
   const chrome = el('div', 'chrome');
-  chrome.append(tab, peersEl, modeSeg, docTools, langSelect, runBtn, aiBar, shareBtn, themeBtn);
+  chrome.append(tab, peersEl, modeSeg, docTools, langSelect, runBtn, aiBar, chatBtn, shareBtn, themeBtn);
 
   const gutter = el('div', 'gutter');
   const docEl = el('div', 'doc');
@@ -170,7 +175,26 @@ export function mountEditor(opts: EditorOptions): ClientConnection {
     outputEl.style.display = 'none';
   });
 
-  root.append(chrome, shell, outputEl, statusbar);
+  // Room chat panel — ephemeral, per-room, identity stamped by the server.
+  const chatTitle = el('span', 'output-title');
+  chatTitle.textContent = 'room chat';
+  const chatCloseBtn = el('button', 'output-close');
+  chatCloseBtn.type = 'button';
+  chatCloseBtn.textContent = '✕';
+  const chatHead = el('div', 'chat-head');
+  chatHead.append(chatTitle, chatCloseBtn);
+  const chatMsgs = el('div', 'chat-msgs');
+  const chatInput = document.createElement('input');
+  chatInput.className = 'chat-input';
+  chatInput.type = 'text';
+  chatInput.placeholder = 'Message the room…';
+  chatInput.maxLength = 500;
+  chatInput.spellcheck = false;
+  const chatPanel = el('div', 'chat-panel');
+  chatPanel.style.display = 'none';
+  chatPanel.append(chatHead, chatMsgs, chatInput);
+
+  root.append(chrome, shell, outputEl, chatPanel, statusbar);
 
   // ---- theme ----
   const applyTheme = (theme: string): void => {
@@ -228,9 +252,16 @@ export function mountEditor(opts: EditorOptions): ClientConnection {
     { flushIntervalMs: 50 },
   );
 
-  // Caret tracked as the element id to its left (null = doc start) — survives remote edits.
+  // Caret tracked as the element id to its left (null = doc start) — survives remote
+  // edits. selAnchor is the selection's OTHER end: when it differs from caretAnchor,
+  // peers render the range as a highlight (the protocol carried anchor/focus all along).
   let caretAnchor: ElementId | null = null;
+  let selAnchor: ElementId | null = null;
   let suppressSelectionSync = false;
+  /** Peer being followed (their caret keeps scrolled into view), or null. */
+  let followId: string | null = null;
+  /** Peers who authored ops in the last moment → typing indicator on their chip. */
+  const typers = new Map<string, ReturnType<typeof setTimeout>>();
 
   // ---- model <-> DOM selection mapping ----
   const textLen = (): number => conn.text().length;
@@ -277,6 +308,7 @@ export function mountEditor(opts: EditorOptions): ClientConnection {
 
   function setCaretIndex(index: number): void {
     caretAnchor = conn.caretAt(index).anchor;
+    selAnchor = caretAnchor; // editing collapses the selection
   }
 
   function caretModelIndex(): number {
@@ -377,11 +409,38 @@ export function mountEditor(opts: EditorOptions): ClientConnection {
     cursorsLayer.innerHTML = '';
     // Positions are relative to the scrolled content, so remote carets move with scroll.
     const base = stack.getBoundingClientRect();
+    const textNode = docEl.firstChild;
+    const domLen =
+      textNode && textNode.nodeType === Node.TEXT_NODE ? (textNode.textContent ?? '').length : 0;
+    let followEl: HTMLElement | null = null;
+
     for (const p of conn.remotePresence()) {
       if (!p.cursor) continue;
-      const pt = caretPoint(conn.caretIndex(p.cursor));
-      if (!pt) continue;
+      const focusIdx = conn.caretIndex(p.cursor);
+      const anchorIdx = conn.caretIndex({ anchor: p.cursor.anchor, focus: p.cursor.anchor });
 
+      // Selected range → translucent highlight rects (getClientRects handles multi-line).
+      if (anchorIdx !== focusIdx && textNode && domLen > 0) {
+        const lo = Math.min(anchorIdx, focusIdx);
+        const hi = Math.min(Math.max(anchorIdx, focusIdx), domLen);
+        if (lo < hi) {
+          const range = document.createRange();
+          range.setStart(textNode, lo);
+          range.setEnd(textNode, hi);
+          for (const r of Array.from(range.getClientRects())) {
+            const box = el('div', 'remote-sel');
+            box.style.left = `${r.left - base.left}px`;
+            box.style.top = `${r.top - base.top}px`;
+            box.style.width = `${Math.max(r.width, 2)}px`;
+            box.style.height = `${r.height}px`;
+            box.style.background = p.user.color;
+            cursorsLayer.appendChild(box);
+          }
+        }
+      }
+
+      const pt = caretPoint(focusIdx);
+      if (!pt) continue;
       const caret = el('div', 'remote-caret');
       caret.style.left = `${pt.x - base.left}px`;
       caret.style.top = `${pt.y - base.top}px`;
@@ -393,13 +452,33 @@ export function mountEditor(opts: EditorOptions): ClientConnection {
       label.style.background = p.user.color;
       caret.appendChild(label);
       cursorsLayer.appendChild(caret);
+      if (p.clientId === followId) followEl = caret;
     }
+    // Follow mode: keep the followed peer's caret in view as they move around.
+    if (followEl) followEl.scrollIntoView({ block: 'center', inline: 'nearest' });
+  }
+
+  function toggleFollow(clientId: string): void {
+    followId = followId === clientId ? null : clientId;
+    renderPeers();
+    renderCursors();
   }
 
   function renderPeers(): void {
     peersEl.innerHTML = '';
-    peersEl.appendChild(chip(user.name, user.color, true));
-    for (const p of conn.remotePresence()) peersEl.appendChild(chip(p.user.name, p.user.color, false));
+    peersEl.appendChild(chip(user.name, user.color, { self: true }));
+    const present = new Set<string>();
+    for (const p of conn.remotePresence()) {
+      present.add(p.clientId);
+      peersEl.appendChild(
+        chip(p.user.name, p.user.color, {
+          typing: typers.has(p.clientId),
+          following: followId === p.clientId,
+          onClick: () => toggleFollow(p.clientId),
+        }),
+      );
+    }
+    if (followId && !present.has(followId)) followId = null; // they left
   }
 
   function renderStatus(): void {
@@ -524,6 +603,7 @@ export function mountEditor(opts: EditorOptions): ClientConnection {
     // on anything else; refreshAutocomplete() (called from render) does the matching.
     if (e.inputType === 'insertText') acWanted = !!(e.data && /[\w$]/.test(e.data));
     else if (e.inputType !== 'deleteContentBackward' && e.inputType !== 'deleteWordBackward') acWanted = false;
+    followId = null; // editing yourself ends follow mode
     render();
     sendCursor();
   });
@@ -803,6 +883,47 @@ export function mountEditor(opts: EditorOptions): ClientConnection {
     }
   });
 
+  // ---- room chat ----
+  let chatVisible = false;
+  let unread = 0;
+  function updateChatBtn(): void {
+    chatBtn.textContent = unread > 0 ? `chat (${unread})` : 'chat';
+    chatBtn.classList.toggle('has-unread', unread > 0);
+  }
+  function setChatOpen(v: boolean): void {
+    chatVisible = v;
+    chatPanel.style.display = v ? '' : 'none';
+    if (v) {
+      unread = 0;
+      updateChatBtn();
+      chatMsgs.scrollTop = chatMsgs.scrollHeight;
+      chatInput.focus();
+    }
+  }
+  chatBtn.addEventListener('click', () => setChatOpen(!chatVisible));
+  chatCloseBtn.addEventListener('click', () => setChatOpen(false));
+  chatInput.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key !== 'Enter') return;
+    conn.sendChat(chatInput.value);
+    chatInput.value = '';
+  });
+  function appendChat(m: ChatBroadcast): void {
+    const row = el('div', 'chat-msg');
+    const name = el('span', 'chat-name');
+    name.textContent = m.from === conn.clientId ? 'you' : m.name;
+    name.style.color = m.color;
+    const text = document.createElement('span');
+    text.textContent = m.text; // textContent — chat can never inject HTML
+    row.append(name, text);
+    chatMsgs.appendChild(row);
+    while (chatMsgs.children.length > 200) chatMsgs.removeChild(chatMsgs.firstChild!);
+    chatMsgs.scrollTop = chatMsgs.scrollHeight;
+    if (!chatVisible && m.from !== conn.clientId) {
+      unread += 1;
+      updateChatBtn();
+    }
+  }
+
   // ---- run (Python via Pyodide, sandboxed in a worker) ----
   let running = false;
   runBtn.addEventListener('click', () => {
@@ -837,7 +958,7 @@ export function mountEditor(opts: EditorOptions): ClientConnection {
     if (cursorTimer) return;
     cursorTimer = setTimeout(() => {
       cursorTimer = null;
-      conn.setCursor({ anchor: caretAnchor, focus: caretAnchor });
+      conn.setCursor({ anchor: selAnchor, focus: caretAnchor });
     }, 60);
   }
 
@@ -852,6 +973,7 @@ export function mountEditor(opts: EditorOptions): ClientConnection {
       hideAc();
     }
     setCaretIndex(sel.end);
+    if (sel.start !== sel.end) selAnchor = conn.caretAt(sel.start).anchor;
     renderStatus();
     sendCursor();
   });
@@ -897,6 +1019,21 @@ export function mountEditor(opts: EditorOptions): ClientConnection {
     renderPeers();
     renderStatus();
   });
+  conn.on('activity', (...args: unknown[]) => {
+    // A peer authored ops: pulse their chip for a moment.
+    const from = args[0] as string;
+    const prev = typers.get(from);
+    if (prev) clearTimeout(prev);
+    typers.set(
+      from,
+      setTimeout(() => {
+        typers.delete(from);
+        renderPeers();
+      }, 1600),
+    );
+    renderPeers();
+  });
+  conn.on('chat', (...args: unknown[]) => appendChat(args[0] as ChatBroadcast));
   conn.on('sync', () => {
     render();
     docEl.focus();
@@ -955,12 +1092,29 @@ function toolBtn(label: string, title: string): HTMLButtonElement {
   b.title = title;
   return b;
 }
-function chip(name: string, color: string, isSelf: boolean): HTMLElement {
+interface ChipOpts {
+  self?: boolean;
+  typing?: boolean;
+  following?: boolean;
+  onClick?: () => void;
+}
+function chip(name: string, color: string, opts: ChipOpts): HTMLElement {
   const c = el('span', 'peer');
-  const dot = el('span', 'peer-dot');
+  const dot = el('span', opts.typing ? 'peer-dot typing' : 'peer-dot');
   dot.style.background = color;
   const text = document.createElement('span');
-  text.textContent = isSelf ? `${name} (you)` : name;
+  text.textContent = opts.self ? `${name} (you)` : name;
   c.append(dot, text);
+  if (opts.typing) {
+    const pen = el('span', 'peer-pen');
+    pen.textContent = '✎';
+    c.appendChild(pen);
+  }
+  if (opts.onClick) {
+    c.classList.add('clickable');
+    c.title = opts.following ? 'Following — click to stop' : 'Click to follow their cursor';
+    if (opts.following) c.classList.add('following');
+    c.addEventListener('click', opts.onClick);
+  }
   return c;
 }
