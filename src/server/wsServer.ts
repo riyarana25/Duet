@@ -6,7 +6,7 @@
  * Cross-instance: ops are also published to the bus; ops arriving from the bus are applied
  * to the local room and relayed to local sockets (never re-published — own echoes are
  * dropped by instanceId). Presence is exchanged as per-instance snapshots; each instance
- * shows the UNION of local + remote presence. Why WebSockets force this design: architecture.md.
+ * shows the union of local + remote presence. Why WebSockets force this design: architecture.md.
  */
 import { randomUUID } from 'crypto';
 import { IncomingMessage, Server as HttpServer } from 'http';
@@ -224,7 +224,7 @@ class EditorServer {
 
   /**
    * Run an AI transform and return the result to the requesting socket only. The server
-   * does NOT touch the document — the client applies the result through the CRDT as ops.
+   * does not touch the document — the client applies the result through the CRDT as ops.
    */
   private async handleAI(
     socket: LiveSocket,

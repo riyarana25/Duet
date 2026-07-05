@@ -1,11 +1,11 @@
 /**
  * Wire protocol for single-server real-time sync (Phase 2).
  *
- * All frames are JSON text. Ops travel as the EXACT Phase-1 Operation type — the server
+ * All frames are JSON text. Ops travel as the exact Phase-1 Operation type — the server
  * is a dumb relay: it stores and forwards ops, never interprets or transforms them. There
  * is no server-side merge and no last-write-wins; convergence is the CRDT's job.
  *
- * Cursors are carried as element ids (anchor/focus), NOT numeric indexes, so a remote
+ * Cursors are carried as element ids (anchor/focus), not numeric indexes, so a remote
  * caret stays anchored to the correct character as concurrent edits shift text. logic.md.
  */
 import { DocSnapshot, ElementId, Operation } from '../crdt/types';
@@ -23,7 +23,7 @@ export interface PresenceUser {
 
 /**
  * A cursor/selection expressed in CRDT terms. `anchor`/`focus` are the element ids the
- * caret sits immediately AFTER (null = document start). A plain caret has anchor === focus;
+ * caret sits immediately after (null = document start). A plain caret has anchor === focus;
  * a selection has them differ (used by the AI panel in Phase 5).
  */
 export interface CursorPos {

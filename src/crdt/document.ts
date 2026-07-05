@@ -2,7 +2,7 @@
  * RGADocument — a hand-written RGA sequence CRDT (logic.md is the spec).
  *
  * State is just: a map of elements (by id) + a set of tombstoned ids. The visible text
- * is a PURE FUNCTION of that state (linearize()), recomputed each render. Because render
+ * is a pure function of that state (linearize()), recomputed each render. Because render
  * never depends on insertion order, and because inserts are keyed-by-id (idempotent) and
  * deletes are set-membership (idempotent + commutative even with their own insert),
  * apply() is commutative and idempotent. That is the convergence guarantee. logic.md §7.
@@ -45,7 +45,7 @@ export class RGADocument implements CRDTDocument {
     if (index < 0 || index > vis.length) {
       throw new RangeError(`insert index ${index} out of range [0, ${vis.length}]`);
     }
-    // Origin = the visible element immediately to the LEFT; null means doc start.
+    // Origin = the visible element immediately to the left; null means doc start.
     const originId: ElementId | null = index === 0 ? null : vis[index - 1]!.id;
     return this.insertAfter(originId, value);
   }
@@ -91,7 +91,7 @@ export class RGADocument implements CRDTDocument {
   }
 
   /**
-   * The state mutation, with NO clock side-effect. Idempotent by construction:
+   * The state mutation, with no clock side-effect. Idempotent by construction:
    *  - insert: skip if the id already exists (re-inserts are no-ops).
    *  - delete: Set.add is naturally idempotent, and tolerates the insert not being
    *    present yet (the element is simply born tombstoned). logic.md §4.
@@ -126,7 +126,7 @@ export class RGADocument implements CRDTDocument {
 
   // ---- persistence ----
 
-  /** Serialize FULL state (all elements + tombstones) for snapshotting. logic.md §4. */
+  /** Serialize full state (all elements + tombstones) for snapshotting. logic.md §4. */
   snapshot(): DocSnapshot {
     return {
       elements: [...this.elements.values()],
@@ -158,7 +158,7 @@ export class RGADocument implements CRDTDocument {
   }
 
   /**
-   * Total order over ALL elements (tombstones included) via RGA tree linearization:
+   * Total order over all elements (tombstones included) via RGA tree linearization:
    * group by origin, sort each sibling group by compareSiblings, pre-order DFS from root.
    * Iterative (explicit stack) so a long left-to-right chain can't overflow the call
    * stack. Recomputed per call — correctness over speed for Phase 1; optimize later.

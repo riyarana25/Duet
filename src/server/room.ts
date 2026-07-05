@@ -3,7 +3,7 @@
  *
  * Phase 2 role (relay + presence) PLUS Phase 3 persistence:
  *  - Maintains a server-side RGADocument replica by applying every accepted op. Applying
- *    convergent CRDT ops is NOT last-write-wins; it just materializes the same state every
+ *    convergent CRDT ops is not last-write-wins; it just materializes the same state every
  *    replica would compute. The room still relays ops verbatim (no merge, no reorder).
  *  - Keeps `recentOps` = ops accepted since the last snapshot, and a `persistedSnapshot`.
  *    A (re)joining client gets `snapshot + recentOps` and replays to converge (logic.md §7).
@@ -107,7 +107,7 @@ export class Room {
   }
 
   /**
-   * Ops from a LOCAL client: dedup + apply + buffer + DURABLY persist (and snapshot on
+   * Ops from a local client: dedup + apply + buffer + durably persist (and snapshot on
    * interval). Returns the newly-accepted ops to relay. In-memory state updates
    * synchronously (hot path); durable writes are queued async.
    */
@@ -121,8 +121,8 @@ export class Room {
   }
 
   /**
-   * Ops arriving from ANOTHER instance via the bus: dedup + apply + buffer so this
-   * instance can serve/catch-up its own clients — but DO NOT persist. With a shared store
+   * Ops arriving from another instance via the bus: dedup + apply + buffer so this
+   * instance can serve/catch-up its own clients — but do not persist. With a shared store
    * each op is written exactly once, by its originating instance (no double-write/race).
    */
   acceptRemote(ops: Operation[]): Operation[] {

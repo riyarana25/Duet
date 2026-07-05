@@ -141,7 +141,7 @@ export class ClientConnection extends Emitter {
 
   /**
    * Run an AI transform over the visible range [start, end) and replace it with the result
-   * THROUGH THE CRDT. The selection is captured as element ids up front, so the replacement
+   * through the CRDT. The selection is captured as element ids up front, so the replacement
    * lands on the right characters even if concurrent edits shift positions while the LLM
    * runs. The replacement = tombstone each selected id + insert the result after the char
    * to the left of the selection (insert lamports beat the tombstoned ids, so the new text

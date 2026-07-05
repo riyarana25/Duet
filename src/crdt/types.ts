@@ -1,7 +1,7 @@
 /**
  * CRDT type contracts — the guardrails for the whole edit path.
  *
- * These interfaces are written FIRST and everything else implements against them.
+ * These interfaces are written first and everything else implements against them.
  * The algorithm they encode is specified in ../../logic.md (read that to learn WHY).
  *
  * Hard rules enforced here by construction:
@@ -35,7 +35,7 @@ export interface Element {
   /** Exactly one character. */
   readonly value: string;
   /**
-   * The id of the element this one was inserted immediately AFTER (its left
+   * The id of the element this one was inserted immediately after (its left
    * neighbour at insert time). `null` means "inserted at the very start"
    * (child of the virtual root). This pointer defines tree structure.
    */
@@ -69,7 +69,7 @@ export interface VisibleChar {
 }
 
 /**
- * A serializable snapshot of FULL CRDT state — every element (tombstoned included) plus
+ * A serializable snapshot of full CRDT state — every element (tombstoned included) plus
  * the tombstone set. This is what gets persisted (Phase 3). Rendering-only state would
  * lose the ids/tombstones future concurrent ops need, so we snapshot everything.
  */
@@ -82,7 +82,7 @@ export interface DocSnapshot {
  * The replicated document state and the operations over it.
  *
  * Convergence contract (proved by Phase-1 property tests, logic.md §7):
- *   For any two Documents that have applied the SAME SET of ops,
+ *   For any two Documents that have applied the same set of ops,
  *   `text()` is identical — independent of apply order and of duplicates.
  *
  * `apply` MUST be commutative and idempotent. `generateInsert`/`generateDelete`
@@ -126,7 +126,7 @@ export interface CRDTDocument {
    */
   visibleElements(): ReadonlyArray<VisibleChar>;
 
-  /** Serialize FULL state (all elements + tombstones) for persistence. */
+  /** Serialize full state (all elements + tombstones) for persistence. */
   snapshot(): DocSnapshot;
 
   /** Replace state from a snapshot (advances the Lamport clock past it). */

@@ -5,3 +5,5 @@ public/bundle.js.map
 coverage/
 *.log
 .DS_Store
+.env
+.env.local

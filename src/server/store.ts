@@ -1,15 +1,15 @@
 /**
- * DocStore — durable persistence for a document: a periodic SNAPSHOT plus an append-only
- * OP LOG of everything accepted since that snapshot. (Phase 3.)
+ * DocStore — durable persistence for a document: a periodic snapshot plus an append-only
+ * op log of everything accepted since that snapshot. (Phase 3.)
  *
  * Rejoin model: a (re)joining client receives `snapshot + ops-since-snapshot` and replays
  * them onto a fresh replica → CRDT convergence (logic.md §7). The snapshot bounds how far
  * back the op log must reach.
  *
- *   SNAPSHOT-INTERVAL TRADEOFF (why N is tunable):
- *   - Snapshot OFTEN (small N): tiny op log ⇒ fast rejoin, low memory, but frequent
+ *   Snapshot-interval tradeoff (why N is tunable):
+ *   - Snapshot often (small N): tiny op log ⇒ fast rejoin, low memory, but frequent
  *     (whole-state) writes ⇒ more I/O and write amplification.
- *   - Snapshot RARELY (large N): cheap steady state, but a long op log ⇒ slower catch-up,
+ *   - Snapshot rarely (large N): cheap steady state, but a long op log ⇒ slower catch-up,
  *     more memory, and more work lost-window if a write is interrupted.
  *   The sweet spot depends on doc size vs. edit rate; we expose it as `snapshotEveryOps`.
  */
@@ -18,7 +18,7 @@ import { DocSnapshot, Operation } from '../crdt/types';
 export interface LoadedDoc {
   /** Latest persisted snapshot, or null if the doc has never been snapshotted. */
   snapshot: DocSnapshot | null;
-  /** Ops appended AFTER the snapshot (in order). Empty if fully snapshotted. */
+  /** Ops appended after the snapshot (in order). Empty if fully snapshotted. */
   ops: Operation[];
 }
 

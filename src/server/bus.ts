@@ -1,7 +1,7 @@
 /**
  * MessageBus — the cross-instance fan-out layer (Phase 4).
  *
- * A single WebSocket is pinned to ONE server process, so two users in the same room may be
+ * A single WebSocket is pinned to one server process, so two users in the same room may be
  * connected to different instances. The bus carries ops and presence between instances so
  * those users still converge. Each instance tags messages with its `instanceId` and ignores
  * its own echoes (the bus delivers a publish back to the publisher too). See architecture.md
@@ -15,7 +15,7 @@ import { PresenceState } from '../net/protocol';
 
 export type BusEnvelope =
   | { kind: 'ops'; origin: string; ops: Operation[] }
-  /** The origin instance's LOCAL presence snapshot (full, not a delta). */
+  /** The origin instance's local presence snapshot (full, not a delta). */
   | { kind: 'presence'; origin: string; users: PresenceState[] }
   /** Ask peers to (re)publish their local presence — sent when a client joins. */
   | { kind: 'presence-request'; origin: string };

@@ -1,5 +1,5 @@
 /**
- * Browser editor — a CONTROLLED contenteditable surface over a ClientConnection.
+ * Browser editor — a controlled contenteditable surface over a ClientConnection.
  *
  * The CRDT is the single source of truth: every keystroke is intercepted (`beforeinput`,
  * preventDefault), translated into CRDT ops, and the DOM is re-rendered from `conn.text()`.
@@ -59,7 +59,7 @@ export function mountEditor(opts: EditorOptions): ClientConnection {
     { flushIntervalMs: 50 },
   );
 
-  // Caret tracked as the element id to its LEFT (null = doc start) — survives remote edits.
+  // Caret tracked as the element id to its left (null = doc start) — survives remote edits.
   let caretAnchor: ElementId | null = null;
   let suppressSelectionSync = false;
 

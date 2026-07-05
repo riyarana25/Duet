@@ -10,8 +10,8 @@ export function keyOf(id: ElementId): ElementKey {
 }
 
 /**
- * Orders two SIBLINGS (elements sharing the same originId — i.e. concurrent inserts
- * after the same character). DESCENDING by (lamport, site): the larger sorts FIRST,
+ * Orders two siblings (elements sharing the same originId — i.e. concurrent inserts
+ * after the same character). Descending by (lamport, site): the larger sorts first,
  * meaning closest to the shared origin (leftmost). logic.md §5.
  *
  * `(lamport, site)` is a strict total order across the whole system, so every replica
@@ -19,7 +19,7 @@ export function keyOf(id: ElementId): ElementKey {
  * guard; it is effectively unreachable because a single site never reuses a lamport.
  */
 export function compareSiblings(a: Element, b: Element): number {
-  if (a.lamport !== b.lamport) return b.lamport - a.lamport; // larger lamport first
-  if (a.id.site !== b.id.site) return a.id.site < b.id.site ? 1 : -1; // larger site first
+  if (a.lamport !== b.lamport) return b.lamport - a.lamport;
+  if (a.id.site !== b.id.site) return a.id.site < b.id.site ? 1 : -1;
   return b.id.counter - a.id.counter;
 }
