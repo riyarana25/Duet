@@ -36,6 +36,36 @@
   grammars are commodity work, and the no-library rule exists to prove out the CRDT, not
   to hand-write the world. The token *palette* stays ours — no hljs theme import; colours
   map onto the same warm variables as everything else.
+- **Diagnostics, same outsourcing rule.** "Does it compile?" is answered by acorn for
+  JavaScript and the platform's `JSON.parse` for JSON — full syntax validation via a small
+  trusted parser, shown as ✓/✗ + line in the status bar (debounced with detection, never
+  per keystroke). Languages without a cheap in-browser parser show nothing rather than a
+  fake green check.
+- **Filename tab.** The chrome shows `room.ext` (e.g. `hello.py`) like an editor tab —
+  the extension follows the detected/selected language, `.md` in doc mode. Presence chips
+  and a colour-coded status bar (diagnostics, language, sync state) carry the live-ness.
+- **Trailing-newline sentinel.** A caret after a final `\n` has no line box, so browsers
+  draw it at the end of the previous line (press Enter → gutter grows, caret doesn't
+  move). Render fix: when the model text ends with `\n`, the DOM gets ONE extra `\n` so
+  the last line exists; all model↔DOM index mapping clamps to the model length, so the
+  sentinel is invisible to editing and to peers.
+- **Run = real execution, honestly scoped.** ▶ Run executes the document as Python via
+  Pyodide (actual CPython in WebAssembly) inside a Web Worker: no DOM access, off the main
+  thread, hard-terminated on timeout so an infinite loop costs seconds, not the tab. The
+  worker stays warm between runs (the runtime is a one-time ~10 MB CDN download). The
+  button only appears for Python — languages we can't genuinely run don't get a fake one.
+- **Autocomplete without an LSP.** Word-based completion — the active language's keywords
+  plus identifiers already present in the document, prefix-matched at the caret. No
+  server, no language service; on demo-sized documents it covers most of what completion
+  is actually used for (names you already typed). Menu keys: ↑/↓, Enter/Tab, Esc.
+- **Formatting is markdown in the text, not attributed rich text.** The CRDT is a
+  plain-character sequence, so bold/headings live in the document as markdown syntax
+  (toolbar + Ctrl+B/I insert it; a preview toggle renders it via a small escape-first
+  renderer, [src/web/markdown.ts](src/web/markdown.ts)). This is the honest design given
+  the data model: formatting collaborates like any keystroke, with zero changes to the
+  CRDT. True attributed rich text (formatting ranges that survive concurrent edits) is a
+  known hard problem — Peritext-style mark CRDTs — and is explicitly future work, not
+  something to fake with HTML in a character sequence.
 - **Two view modes over one shared text.** `code` (mono, gutter, highlight, no wrap) and
   `doc` (serif, wrapped, focused column — the original editorial design lives on here).
   Mode is a per-client rendering choice: peers can view the same document differently and

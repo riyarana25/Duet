@@ -27,9 +27,17 @@ just like a keystroke.
   as CRDT ops.
 - **Browser editor, code-first** — a controlled `contenteditable` surface where the CRDT
   is the single source of truth: syntax highlighting (highlight.js, auto-detected or
-  picked from 16 languages), line numbers, live remote cursors, a join screen for picking
-  your name/colour/room, and dark + light themes. A **doc mode** toggle renders the same
-  shared text as a serif writing surface for prose.
+  picked from 16 languages), live syntax checking (acorn for JS, native for JSON) in the
+  status bar, line numbers, a filename tab that follows the language (`hello.py`), live
+  remote cursors, a join screen for picking your name/colour/room, and dark + light
+  themes. A **doc mode** toggle renders the same shared text as a serif writing surface
+  for prose.
+- **Run Python in the browser** — a ▶ Run button executes the document as real CPython
+  (Pyodide/WebAssembly) in a sandboxed Web Worker with a hard timeout; stdout and
+  tracebacks land in an output panel. First run downloads the runtime (~10 MB, cached).
+- **Autocomplete & editing niceties** — word-based completion (language keywords +
+  identifiers already in the doc, arrows/Enter/Tab/Esc), Tab indent, Enter auto-indent,
+  Ctrl+Backspace / Ctrl+Delete word deletion.
 
 ## Architecture
 

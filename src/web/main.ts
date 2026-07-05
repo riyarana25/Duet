@@ -58,6 +58,16 @@ function showJoinScreen(host: HTMLElement): void {
   roomInput.value = params.get('doc') ?? 'welcome';
   roomInput.placeholder = 'room name';
   roomInput.maxLength = 64;
+  // Fresh random room → a private space you can share by link.
+  const diceBtn = document.createElement('button');
+  diceBtn.type = 'button';
+  diceBtn.className = 'dice-btn';
+  diceBtn.textContent = '↻';
+  diceBtn.title = 'New random room';
+  diceBtn.addEventListener('click', () => {
+    roomInput.value = `room-${Math.random().toString(36).slice(2, 8)}`;
+  });
+  roomField.row.appendChild(diceBtn);
 
   // Colour swatches — the one choice that has no sensible text input.
   const colorLabel = div('join-label');
@@ -117,16 +127,18 @@ function div(className: string): HTMLDivElement {
   d.className = className;
   return d;
 }
-function field(label: string): { wrap: HTMLDivElement; input: HTMLInputElement } {
+function field(label: string): { wrap: HTMLDivElement; row: HTMLDivElement; input: HTMLInputElement } {
   const wrap = div('join-field');
   const l = div('join-label');
   l.textContent = label;
+  const row = div('join-row');
   const input = document.createElement('input');
   input.className = 'join-input';
   input.type = 'text';
   input.spellcheck = false;
-  wrap.append(l, input);
-  return { wrap, input };
+  row.appendChild(input);
+  wrap.append(l, row);
+  return { wrap, row, input };
 }
 
 if (root) showJoinScreen(root);

@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.105.0",
+    "acorn": "^8.17.0",
     "dotenv": "^17.4.2",
     "highlight.js": "^11.11.1",
     "redis": "^4.7.1",

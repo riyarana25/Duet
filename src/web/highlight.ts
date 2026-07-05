@@ -34,25 +34,25 @@ for (const [name, lang] of Object.entries(REGISTRY)) {
   hljs.registerLanguage(name, lang as Parameters<typeof hljs.registerLanguage>[1]);
 }
 
-/** Dropdown options; 'auto' defers to detectLanguage(). */
-export const LANGUAGE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
-  { value: 'auto', label: 'auto' },
-  { value: 'javascript', label: 'js' },
-  { value: 'typescript', label: 'ts' },
-  { value: 'python', label: 'python' },
-  { value: 'java', label: 'java' },
-  { value: 'c', label: 'c' },
-  { value: 'cpp', label: 'c++' },
-  { value: 'csharp', label: 'c#' },
-  { value: 'go', label: 'go' },
-  { value: 'rust', label: 'rust' },
-  { value: 'json', label: 'json' },
-  { value: 'xml', label: 'html' },
-  { value: 'css', label: 'css' },
-  { value: 'bash', label: 'bash' },
-  { value: 'sql', label: 'sql' },
-  { value: 'markdown', label: 'md' },
-  { value: 'plaintext', label: 'plain' },
+/** Dropdown options; 'auto' defers to detectLanguage(). `ext` feeds the filename tab. */
+export const LANGUAGE_OPTIONS: ReadonlyArray<{ value: string; label: string; ext: string }> = [
+  { value: 'auto', label: 'auto', ext: 'txt' },
+  { value: 'javascript', label: 'js', ext: 'js' },
+  { value: 'typescript', label: 'ts', ext: 'ts' },
+  { value: 'python', label: 'python', ext: 'py' },
+  { value: 'java', label: 'java', ext: 'java' },
+  { value: 'c', label: 'c', ext: 'c' },
+  { value: 'cpp', label: 'c++', ext: 'cpp' },
+  { value: 'csharp', label: 'c#', ext: 'cs' },
+  { value: 'go', label: 'go', ext: 'go' },
+  { value: 'rust', label: 'rust', ext: 'rs' },
+  { value: 'json', label: 'json', ext: 'json' },
+  { value: 'xml', label: 'html', ext: 'html' },
+  { value: 'css', label: 'css', ext: 'css' },
+  { value: 'bash', label: 'bash', ext: 'sh' },
+  { value: 'sql', label: 'sql', ext: 'sql' },
+  { value: 'markdown', label: 'md', ext: 'md' },
+  { value: 'plaintext', label: 'plain', ext: 'txt' },
 ];
 
 // Detection is restricted to a subset: fewer candidates = faster + fewer misdetections.
