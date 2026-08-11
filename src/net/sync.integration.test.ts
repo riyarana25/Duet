@@ -1,5 +1,5 @@
 /**
- * Phase 2 integration tests: real WebSocket server + multiple real client connections.
+ * Integration tests: real WebSocket server + multiple real client connections.
  * Proves the relay preserves CRDT convergence over the wire, that late joiners catch up,
  * and that presence (live cursors / who's online) works through the connection lifecycle.
  */

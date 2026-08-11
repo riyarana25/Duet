@@ -1,5 +1,5 @@
 /**
- * MessageBus — the cross-instance fan-out layer (Phase 4).
+ * MessageBus — the cross-instance fan-out layer.
  *
  * A single WebSocket is pinned to one server process, so two users in the same room may be
  * connected to different instances. The bus carries ops and presence between instances so

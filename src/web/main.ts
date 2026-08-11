@@ -43,9 +43,9 @@ function showJoinScreen(host: HTMLElement): void {
 
   const card = div('join-card');
   const title = div('join-title');
-  title.textContent = 'Join a session';
+  title.textContent = 'Duet';
   const sub = div('join-sub');
-  sub.textContent = 'Live collaborative code editing over a hand-written CRDT.';
+  sub.textContent = 'Real-time collaborative editing for code and prose — over a hand-written CRDT.';
 
   const nameField = field('Name');
   const nameInput = nameField.input;

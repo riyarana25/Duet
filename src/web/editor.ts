@@ -29,7 +29,7 @@ import { ClientConnection } from '../client/connection';
 import { browserWsTransport } from '../client/transport.browser';
 import { ElementId } from '../crdt/types';
 import { AIAction } from '../ai/aiService';
-import { ChatBroadcast, CursorPos, PresenceUser } from '../net/protocol';
+import { ChatBroadcast, PresenceUser } from '../net/protocol';
 import { highlightAs, detectLanguage, LANGUAGE_OPTIONS } from './highlight';
 import { checkSyntax, Diagnostic } from './diagnostics';
 import { completions } from './complete';

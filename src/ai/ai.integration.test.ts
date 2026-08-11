@@ -1,5 +1,5 @@
 /**
- * Phase 5 tests: AI assist applied THROUGH THE CRDT.
+ * AI assist applied THROUGH THE CRDT.
  * The key assertion is that an AI transform on one client lands as CRDT ops that converge
  * on a second client — i.e. the result is real collaborative state, not a local mutation.
  */

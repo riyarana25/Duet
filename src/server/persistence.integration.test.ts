@@ -1,5 +1,5 @@
 /**
- * Phase 3 tests: snapshots + op log, and rejoin/restart catch-up.
+ * Persistence tests: snapshots + op log, and rejoin/restart catch-up.
  * Proves (a) snapshots are taken on the interval, (b) a late joiner reconstructs from
  * snapshot + ops-since, and (c) state survives a full server restart (FileStore).
  *

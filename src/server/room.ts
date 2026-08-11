@@ -1,7 +1,7 @@
 /**
  * Room — server-side state for ONE document (one room per docId).
  *
- * Phase 2 role (relay + presence) PLUS Phase 3 persistence:
+ * Room combines two jobs: relaying ops/presence to connected clients, and persisting them:
  *  - Maintains a server-side RGADocument replica by applying every accepted op. Applying
  *    convergent CRDT ops is not last-write-wins; it just materializes the same state every
  *    replica would compute. The room still relays ops verbatim (no merge, no reorder).
@@ -83,7 +83,7 @@ export class Room {
     return this.clients.size === 0;
   }
 
-  // ---- membership / presence (Phase 2) ----
+  // ---- membership / presence ----
 
   join(clientId: string, socket: RoomSocket, user: PresenceUser): void {
     this.clients.set(clientId, { clientId, socket, user, cursor: null });
@@ -107,7 +107,7 @@ export class Room {
     }));
   }
 
-  // ---- ops / persistence (Phase 3) ----
+  // ---- ops / persistence ----
 
   /** State a newcomer needs to catch up: last snapshot + ops since it. */
   welcomeState(): { snapshot: DocSnapshot | null; ops: Operation[] } {

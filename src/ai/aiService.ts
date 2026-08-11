@@ -1,8 +1,8 @@
 /**
- * AIService — the seam between the editor and an LLM (Phase 5). Kept tiny and injectable
+ * AIService — the seam between the editor and an LLM. Kept tiny and injectable
  * so the server can run with a real Anthropic client in production or a deterministic mock
- * in tests. The result of a transform is applied to the document through the CRDT (as
- * delete + insert ops), never as a direct buffer mutation.
+ * in tests. The result of a transform is applied to the document through the CRDT by the
+ * client (see connection.ts), never as a direct buffer mutation.
  */
 export type AIAction = 'summarize' | 'improve';
 

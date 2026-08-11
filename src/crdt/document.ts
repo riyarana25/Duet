@@ -31,7 +31,7 @@ export class RGADocument implements CRDTDocument {
 
   constructor(public readonly site: string) {}
 
-  /** Build a replica directly from a persisted snapshot (Phase 3). */
+  /** Build a replica directly from a persisted snapshot. */
   static fromSnapshot(site: string, snapshot: DocSnapshot): RGADocument {
     const d = new RGADocument(site);
     d.load(snapshot);
@@ -166,8 +166,8 @@ export class RGADocument implements CRDTDocument {
    * Total order over all elements (tombstones included) via RGA tree linearization:
    * group by origin, sort each sibling group by compareSiblings, pre-order DFS from root.
    * Iterative (explicit stack) so a long left-to-right chain can't overflow the call
-   * stack. Recomputed per call — correctness over speed for Phase 1; optimize later.
-   * logic.md §5.
+   * stack. Recomputed per call — correctness over speed; optimize later if it's ever
+   * a bottleneck. logic.md §5.
    */
   private linearize(): Element[] {
     // childrenByOrigin: origin key (null = virtual root) -> its child elements.
@@ -192,9 +192,8 @@ export class RGADocument implements CRDTDocument {
       out.push(el);
       pushReversed(childrenByOrigin.get(keyOf(el.id)));
     }
-    // Note: an element whose origin has NOT been applied yet is unreachable from root and
-    // is omitted until that origin arrives. In any causally-complete op set (every op's
-    // origin is itself an applied insert) nothing dangles, so the final render is total.
+    // An element whose origin hasn't been applied yet is unreachable from root and omitted
+    // until it arrives; a causally-complete op set never dangles, so the render is total.
     return out;
   }
 }

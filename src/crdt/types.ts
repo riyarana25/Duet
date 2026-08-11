@@ -70,8 +70,8 @@ export interface VisibleChar {
 
 /**
  * A serializable snapshot of full CRDT state — every element (tombstoned included) plus
- * the tombstone set. This is what gets persisted (Phase 3). Rendering-only state would
- * lose the ids/tombstones future concurrent ops need, so we snapshot everything.
+ * the tombstone set. This is what gets persisted. Rendering-only state would lose the
+ * ids/tombstones future concurrent ops need, so everything is snapshotted.
  */
 export interface DocSnapshot {
   readonly elements: Element[];
@@ -81,7 +81,7 @@ export interface DocSnapshot {
 /**
  * The replicated document state and the operations over it.
  *
- * Convergence contract (proved by Phase-1 property tests, logic.md §7):
+ * Convergence contract (proved by property tests, logic.md §7):
  *   For any two Documents that have applied the same set of ops,
  *   `text()` is identical — independent of apply order and of duplicates.
  *
@@ -95,16 +95,11 @@ export interface CRDTDocument {
 
   /**
    * Author a local insert of `value` at visible position `index`
-   * (0 = before first visible char, text().length = at end).
-   * Mints a fresh id + Lamport stamp, applies it locally, and returns the op
-   * for broadcast. Throws on out-of-range index.
+   * (0 = before first visible char, text().length = at end). Throws on out-of-range index.
    */
   generateInsert(index: number, value: string): InsertOp;
 
-  /**
-   * Author a local delete of the visible character at `index`.
-   * Returns the op for broadcast. Throws on out-of-range index.
-   */
+  /** Author a local delete of the visible character at `index`. Throws on out-of-range index. */
   generateDelete(index: number): DeleteOp;
 
   /**

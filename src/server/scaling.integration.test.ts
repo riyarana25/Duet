@@ -1,5 +1,5 @@
 /**
- * Phase 4 tests: cross-instance fan-out. Two SEPARATE server instances share a MessageBus
+ * Cross-instance fan-out tests. Two SEPARATE server instances share a MessageBus
  * (and a store); clients connected to different instances must converge and see each other's
  * presence. The InMemoryBus exercises the logic deterministically; a gated block runs the
  * exact same scenario over real Redis when REDIS_URL is set.

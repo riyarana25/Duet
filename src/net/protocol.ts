@@ -1,7 +1,7 @@
 /**
- * Wire protocol for single-server real-time sync (Phase 2).
+ * Wire protocol for real-time sync between client and server.
  *
- * All frames are JSON text. Ops travel as the exact Phase-1 Operation type — the server
+ * All frames are JSON text. Ops travel as the exact CRDT Operation type — the server
  * is a dumb relay: it stores and forwards ops, never interprets or transforms them. There
  * is no server-side merge and no last-write-wins; convergence is the CRDT's job.
  *
@@ -24,7 +24,7 @@ export interface PresenceUser {
 /**
  * A cursor/selection expressed in CRDT terms. `anchor`/`focus` are the element ids the
  * caret sits immediately after (null = document start). A plain caret has anchor === focus;
- * a selection has them differ (used by the AI panel in Phase 5).
+ * a selection has them differ.
  */
 export interface CursorPos {
   readonly anchor: ElementId | null;
@@ -42,7 +42,7 @@ export type ClientMessage =
   | { t: 'join'; v: number; docId: string; user: PresenceUser }
   | { t: 'ops'; ops: Operation[] }
   | { t: 'cursor'; cursor: CursorPos | null }
-  // AI assist (Phase 5): request a transform of the selected text. The RESULT is applied
+  // AI assist: request a transform of the selected text. The RESULT is applied
   // client-side as CRDT ops — the server only runs the LLM, it never mutates the doc.
   | { t: 'ai'; requestId: string; action: AIAction; text: string }
   // Room chat: ephemeral (not persisted); the server stamps sender identity + time.
@@ -59,7 +59,7 @@ export interface ChatBroadcast {
 }
 
 export type ServerMessage =
-  // Catch-up = persisted snapshot (or null) + ops since that snapshot. Phase 3.
+  // Catch-up = persisted snapshot (or null) + ops since that snapshot.
   | { t: 'welcome'; selfId: string; snapshot: DocSnapshot | null; ops: Operation[]; presence: PresenceState[] }
   | { t: 'ops'; ops: Operation[]; from: string }
   | { t: 'presence'; users: PresenceState[] }

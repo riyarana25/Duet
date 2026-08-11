@@ -139,7 +139,7 @@ export class ClientConnection extends Emitter {
     return i < 0 ? 0 : i + 1; // caret sits just after the anchored char
   }
 
-  // ---- AI assist (Phase 5) ----
+  // ---- AI assist ----
 
   /**
    * Run an AI transform over the visible range [start, end) and replace it with the result

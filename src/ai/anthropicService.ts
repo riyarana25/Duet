@@ -1,5 +1,5 @@
 /**
- * AnthropicAIService — real LLM transforms via the Anthropic API (Phase 5).
+ * AnthropicAIService — real LLM transforms via the Anthropic API.
  * Runs server-side only, so the API key never reaches the browser. Model + usage follow
  * the current API reference: claude-opus-4-8, non-streaming, max_tokens 16000.
  */

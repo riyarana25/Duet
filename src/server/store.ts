@@ -1,6 +1,6 @@
 /**
  * DocStore — durable persistence for a document: a periodic snapshot plus an append-only
- * op log of everything accepted since that snapshot. (Phase 3.)
+ * op log of everything accepted since that snapshot.
  *
  * Rejoin model: a (re)joining client receives `snapshot + ops-since-snapshot` and replays
  * them onto a fresh replica → CRDT convergence (logic.md §7). The snapshot bounds how far
