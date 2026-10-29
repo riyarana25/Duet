@@ -1,8 +1,14 @@
 {
-  "name": "collab-editor",
+  "name": "duet",
   "version": "0.1.0",
   "private": true,
   "description": "Collaborative code editor with a hand-written RGA CRDT",
+  "author": "riyarana25",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/riyarana25/Duet.git"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "build:web": "esbuild src/web/main.ts --bundle --minify --format=iife --target=es2020 --outfile=public/bundle.js",
