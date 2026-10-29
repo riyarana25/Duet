@@ -2,8 +2,8 @@
 
 *A real-time collaborative editor for code **and** prose — built on a hand-written CRDT.*
 
-**[Try it live →](https://collab-editor-kvvw.onrender.com)** open it in two tabs, pick a
-name, and type. *(Free hosting sleeps when idle — the first visit takes ~30s to wake.)*
+No hosted demo yet — see [Deploy your own](#deploy-your-own) below to run it on Render,
+or `npm run dev` to try it locally in two tabs.
 
 ---
 
@@ -13,8 +13,8 @@ highlighting, line numbers, and a run button; flip to **doc** for a calm serif w
 surface with markdown formatting. Same text, same collaborators, no mode wars: you can
 read it as prose while your friend edits it as code.
 
-Underneath is the part I'm most proud of: the merge engine is a **sequence CRDT written
-from scratch** — no Yjs, no Automerge, no operational-transform library. When two people
+The standout piece underneath: the merge engine is a **sequence CRDT written from
+scratch** — no Yjs, no Automerge, no operational-transform library. When two people
 type into the same word at the same time, both edits survive and every screen converges
 to the same result. How that works is explained from first principles in
 [logic.md](logic.md).
