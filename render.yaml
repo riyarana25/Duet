@@ -3,7 +3,7 @@
 # (which the per-IP connection cap reads).
 services:
   - type: web
-    name: collab-editor
+    name: duet
     runtime: docker
     plan: free
     healthCheckPath: /
